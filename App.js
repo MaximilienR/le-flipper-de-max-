@@ -44,21 +44,38 @@ export default function App() {
     },
   });
 
+  // États pour savoir si les boutons sont "pressés"
+  const [leftPressed, setLeftPressed] = useState(false);
+  const [rightPressed, setRightPressed] = useState(false);
+
   // Fonction pour "taper" sur la balle et lui donner une vitesse vers le haut
   const tapFlipper = () => {
     setEntities((prev) => {
-      // On ne veut pas augmenter la vitesse si la balle est déjà en l'air (pour éviter un "fly")
       if (prev.ball.position.y >= 800) {
         return {
           ...prev,
           ball: {
             ...prev.ball,
-            velocityY: -20, // donne un coup vers le haut
+            velocityY: -20,
           },
         };
       }
-      return prev; // pas de changement si la balle est en l'air
+      return prev;
     });
+  };
+
+  // Gestion appui bouton gauche
+  const onLeftPress = () => {
+    setLeftPressed(true);
+    tapFlipper();
+    setTimeout(() => setLeftPressed(false), 300); // remet à 0 la rotation après 300ms
+  };
+
+  // Gestion appui bouton droit
+  const onRightPress = () => {
+    setRightPressed(true);
+    tapFlipper();
+    setTimeout(() => setRightPressed(false), 300);
   };
 
   return (
@@ -79,11 +96,25 @@ export default function App() {
       </GameEngine>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.leftFlipper]} onPress={tapFlipper}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.leftFlipper,
+            leftPressed && { transform: [{ rotate: '0deg' }] }, // rotation quand pressé
+          ]}
+          onPress={onLeftPress}
+        >
           <Text style={styles.buttonText}>Flipper Gauche</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.button, styles.rightFlipper]} onPress={tapFlipper}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.rightFlipper,
+            rightPressed && { transform: [{ rotate: '0deg' }] },
+          ]}
+          onPress={onRightPress}
+        >
           <Text style={styles.buttonText}>Flipper Droit</Text>
         </TouchableOpacity>
       </View>
@@ -152,6 +183,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     marginHorizontal: 20,
     borderRadius: 5,
+    transformOrigin: 'bottom center', // optionnel pour mieux pivoter par la base
   },
   leftFlipper: {
     transform: [{ rotate: '20deg' }],
