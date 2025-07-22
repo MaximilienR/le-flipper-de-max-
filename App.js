@@ -2,43 +2,64 @@ import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { GameEngine } from 'react-native-game-engine';
 
-// Composant balle qui s'affiche à la position donnée
 const Ball = ({ position }) => {
   return (
     <View style={[styles.ball, { top: position.y, left: position.x }]} />
   );
 };
 
-// Système qui fait "tomber" la balle en augmentant sa position y
 const Physics = (entities, { time }) => {
   let ball = entities.ball;
 
-  // Gravité basique (pixels par frame)
-  const gravity = 2;
+  const gravity = 1; // pixels par frame
+  const floorY = 800;
 
-  // On augmente la position Y de la balle
-  ball.position.y += gravity;
+  // Appliquer gravité sur la vitesse verticale
+  ball.velocityY += gravity;
 
-  // Optionnel: bloquer la balle en bas de l'écran
-  const floorY = 800; // adapte selon la hauteur de ton écran
+  // Appliquer la vitesse sur la position
+  ball.position.y += ball.velocityY;
+
+  // Empêcher la balle de descendre sous le sol
   if (ball.position.y > floorY) {
     ball.position.y = floorY;
+    ball.velocityY = 0; // Stopper la vitesse pour qu'elle reste sur le sol
   }
+
+  // Mettre à jour le renderer avec la nouvelle position
+  ball.renderer = <Ball position={{ x: ball.position.x, y: ball.position.y }} />;
 
   return entities;
 };
 
 export default function App() {
-  // Position initiale de la balle (centre horizontal)
-  const initialX = 200; // Ajuste selon ton écran
+  const initialX = 200;
   const initialY = 50;
 
   const [entities, setEntities] = useState({
     ball: {
       position: { x: initialX, y: initialY },
+      velocityY: 0,
       renderer: <Ball position={{ x: initialX, y: initialY }} />,
     },
   });
+
+  // Fonction pour "taper" sur la balle et lui donner une vitesse vers le haut
+  const tapFlipper = () => {
+    setEntities((prev) => {
+      // On ne veut pas augmenter la vitesse si la balle est déjà en l'air (pour éviter un "fly")
+      if (prev.ball.position.y >= 800) {
+        return {
+          ...prev,
+          ball: {
+            ...prev.ball,
+            velocityY: -20, // donne un coup vers le haut
+          },
+        };
+      }
+      return prev; // pas de changement si la balle est en l'air
+    });
+  };
 
   return (
     <View style={styles.container}>
@@ -48,10 +69,8 @@ export default function App() {
         entities={entities}
         onUpdate={(entities) => setEntities({ ...entities })}
       >
-        {/* Titre centré en haut */}
         <Text style={styles.title}>Le flipper de Max</Text>
 
-        {/* Trois cercles en haut en forme de triangle */}
         <View style={styles.circlesContainer}>
           <View style={[styles.circle, styles.topCircle]} />
           <View style={[styles.circle, styles.leftCircle]} />
@@ -59,14 +78,13 @@ export default function App() {
         </View>
       </GameEngine>
 
-      {/* Zone des boutons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.leftFlipper]}>
-          <Text style={styles.buttonText}></Text>
+        <TouchableOpacity style={[styles.button, styles.leftFlipper]} onPress={tapFlipper}>
+          <Text style={styles.buttonText}>Flipper Gauche</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.button, styles.rightFlipper]}>
-          <Text style={styles.buttonText}></Text>
+        <TouchableOpacity style={[styles.button, styles.rightFlipper]} onPress={tapFlipper}>
+          <Text style={styles.buttonText}>Flipper Droit</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -76,7 +94,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#001f3f', // bleu marine
+    backgroundColor: '#001f3f', 
     justifyContent: 'flex-end',
     alignItems: 'center',
   },
@@ -86,7 +104,7 @@ const styles = StyleSheet.create({
   },
   title: {
     position: 'absolute',
-    top: 400,
+    top: 40,
     alignSelf: 'center',
     fontSize: 24,
     fontWeight: 'bold',
@@ -131,7 +149,7 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: 'orange',
     paddingVertical: 10,
-    paddingHorizontal: 60,
+    paddingHorizontal: 40,
     marginHorizontal: 20,
     borderRadius: 5,
   },
@@ -143,6 +161,6 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 16,
   },
 });
